@@ -5,9 +5,6 @@ import dash_table
 import dash_extendable_graph as deg
 from dash.dependencies import Input, Output, State
 
-import plotly
-import plotly.figure_factory as ff
-
 import dash_extendable_graph as deg
 
 ## Data handling
@@ -20,7 +17,6 @@ import csv
 import os, sys, signal, subprocess
 from pathlib import Path
 import itertools    
-from file_read_backwards import FileReadBackwards
 
 ## For creating the download link
 import urllib
