@@ -1,4 +1,4 @@
-import pltly
+import plotly
 import plotly.figure_factory as ff
 from file_read_backwards import FileReadBackwards
 
