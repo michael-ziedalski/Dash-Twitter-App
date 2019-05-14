@@ -6,8 +6,8 @@ from file_read_backwards import FileReadBackwards
 ## Function to concurrently read 1) csv from bottom and 2) live table from top, 
 ## and perform what updates need to be done.
 def read_csv_backwards(file_name, rows, lines):
+    
     newest_tweets = []
-
     with FileReadBackwards(file_name) as fb:
         j = 0
         for i, line in enumerate(fb):
@@ -24,6 +24,7 @@ def read_csv_backwards(file_name, rows, lines):
                 rows.insert(i+j, line_formatted)
                 j = j + 1
 
+                
 
 ## Creating traces that Dash/plotly can make graphs out of
 def generate_trace_per_author(tweets_dict, Graph_trace_indices, create_or_append = 1):
