@@ -1,5 +1,6 @@
-from file_read_backwards import FileReadBackwards
+import pltly
 import plotly.figure_factory as ff
+from file_read_backwards import FileReadBackwards
 
 
 ## Function to concurrently read 1) csv from bottom and 2) live table from top, 
