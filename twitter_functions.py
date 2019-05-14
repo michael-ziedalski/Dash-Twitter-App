@@ -34,6 +34,7 @@ def id_extractor(screenname):
     return ids
 
 
+
 ## Getting old tweets
 def old_tweets(screenname, tweet_count = 10):
 
@@ -61,8 +62,7 @@ def old_tweets(screenname, tweet_count = 10):
                                   pd.DataFrame(info, columns=['Date', 'Author', 'Len', 'Favs', 'Retw', 'Text'])])
         
     archive.sort_values(by='Date')
-    archive.reset_index(drop=True, inplace=True)    
-    
+    archive.reset_index(drop=True, inplace=True)
     
     return archive
     
