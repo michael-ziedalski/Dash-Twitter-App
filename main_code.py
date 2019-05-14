@@ -5,24 +5,29 @@ import dash_table
 import dash_extendable_graph as deg
 from dash.dependencies import Input, Output, State
 
-import dash_extendable_graph as deg
+import plotly
 import plotly.figure_factory as ff
 
-import pandas as pd
+import dash_extendable_graph as deg
+
+## Data handling
 import numpy as np
+import pandas as pd
 import datetime as dt
 
+## Miscl. imports
 import csv
 import os, sys, signal, subprocess
 from pathlib import Path
 import itertools    
 from file_read_backwards import FileReadBackwards
 
+## For creating the download link
 import urllib
 import flask
 
-## Imported custom functions
-from twitter_functions import id_extractor, old_tweets#, Tweet_Author_Placement
+## Custom functions
+from twitter_functions import id_extractor, old_tweets
 from sentiment_analysis_functions import tweet_cleaning, tweet_sentiment
 
 
@@ -67,16 +72,6 @@ app.layout = html.Div(children=[
                        html.Button(id='Submit_Button', children='Submit',
                                    style={'grid-row':'2 / 3', 'grid-column':'4 / 5'}),
         
-#                        dcc.Checklist(id='checklist',
-#                            options=[
-#                                     {'label': 'Stream_on', 'value': 'Stream on'},
-#                                     {'label': 'Stream_off', 'value': 'Stream off'}],
-#                            values=['Stream off'],
-#                            style={'grid-row':'2 / 3', 'grid-column':'5 / 6'},
-#                            labelStyle={'display': 'inline-block'})
-        
-#                        html.Button(id='time_Stream', children='Stream time',
-#                                    style={'grid-row':'2 / 3', 'grid-column':'5 / 6'}),
         
                        html.Button(id='Pause_Stream', children='Pause stream',
                                    style={'grid-row':'2 / 3', 'grid-column':'5 / 6'}),
@@ -104,53 +99,29 @@ app.layout = html.Div(children=[
                                                 {'name': "Retw", 'id': 'Retw'},
                                                 {'name': 'Text', 'id': 'Text'}],
                                   
-                                     ## Column titles always visible
+                                   ## Column titles always visible
                                    n_fixed_rows = 1,
-                                     # Tweet text scrollable if it's too big
-#                                    n_fixed_columns = 5,
-                                  
+
                                    style_cell = {'whiteSpace':'normal'},
                                   
                                    ## Left-aligning test, setting fonts, and setting some column widths
                                    style_cell_conditional=[{'textAlign':'left',
                                                             'font': fonts}],
-#                                                            {'if':{'column_id':'Date'}, ## The Date stuff here screws up my rows.
-#                                                             'width':'40px'}],
-#                                                            {'if':{'column_id':'Len'},
-#                                                             'width':'20px'},
-#                                                            {'if':{'column_id':'Favs'},
-#                                                             'width':'20px'},
-#                                                            {'if':{'column_id':'Retw'},
-#                                                             'width':'20px'}],
+
                                   
                                    ## Bolding of column titles
                                    style_header={'fontWeight':'bold'},
                                   
-                                  ## Following only works without n_fixed_columns
+                                   ## Following only works without n_fixed_columns
                                    ## Horizontal and vertical scrolling
                                    style_table={'maxHeight': '600',
                                                 'overflowY': 'scroll',
                                                 'minWidth':'50',
                                                 'maxWidth':'300'},
-                                 
-                                   ## Enabling selection of multiple tweets for use in analysis on right
-#                                    row_selectable = 'multi',
-                                  
-#                                    editable=True                                  
+                                                                 
                                  ),
         
-        
-        
-        
-        
-        
-        
-#                 figure = { 'data': [ {'type':'histogram',
-#                              'x': selected_tweets_sentiment,
-#                              'histnorm': 'probability'} ],
-#                    'layout': {'title': '% of tweets positive or negative'}
-#                  }
-        
+
 
 
             html.Div(children=[
@@ -160,7 +131,7 @@ app.layout = html.Div(children=[
                     html.H4(children = 'Analysis',
                         style = {'font-size': '24px'}),
                 
-                    dcc.Checklist(id = 'checklist',
+                    dcc.Checklist(id = 'kde_checklist',
                                   options =[{'label': "KDE's", 'value': 1}],
                                   values = [1],
                                   style = {'margin-top':'-20px'}),
@@ -175,38 +146,16 @@ app.layout = html.Div(children=[
                 ],
                          style={'margin-top':'-137px'}),
                 
-                  ## Reminder to add appending ability to graphs at some point.
-#                 deg.ExtendableGraph(id='Sentiment_Graph', 
-#                                     figure={'data': [{'type':'histogram',
-#                                             'histnorm': 'probability'}]
-#                                            }
-#                                    )
-            
-#                             'layout': {'title': '% of tweets positive or negative',
-#                              'barmode':'overlay'}
-                
 
-                
-               
-#                  dcc.Graph(id='Sentiment_Graph', 
-#                            figure={'layout': {'title': '% of tweets positive or negative',
-#                                               'barmode':'overlay'},
-#                                    'data': [{'x': [], 'type':'histogram'},
-#                                             {'x': [], 'type':'histogram'},
-#                                             {'x': [], 'type':'histogram'}
-#                                            ]
-#                                   }
-#                           )
-                
-                
-                  deg.ExtendableGraph(id='Sentiment_Graph', 
-                                      figure={'layout': {'title': '% of tweets positive or negative',
-                                              'barmode':'overlay'},
-                                              
-                                              'data': []
-                                  }
-                          )
-                
+                  dcc.Loading(id='graph_loading_symbol', type='circle', children=[
+                      deg.ExtendableGraph(id='Sentiment_Graph', 
+                                          figure={'layout': {'title': '% of tweets positive or negative',
+                                                             'barmode':'overlay'},
+                                                  'data': []
+                                      }
+                              )
+                  ])
+
                 
                 
                 
@@ -231,7 +180,6 @@ app.layout = html.Div(children=[
     dcc.Store(id='Graph_trace_indices'),
     dcc.Interval(id='Table_Update_Component', interval=3*1000, n_intervals=0,
                  max_intervals=0), ## Interval component is disabled as default, until it is enabled
-#     dcc.Store(id='temp')
     
 ])
                       
@@ -239,8 +187,7 @@ app.layout = html.Div(children=[
 ###### Callbacks ######
 
 
-
-## Opens stream
+## Opens/closes streaming
 @app.callback(
     [Output(component_id='Stream_Process_Id', component_property='data'),
      Output(component_id='Stream_Killed_or_Not', component_property='data'),
@@ -261,23 +208,9 @@ def open_close_stream(Submit_Button, Pause_Stream, ScreenName_Input, Length_of_s
     ## and then starting stream in its own process
     if Submit_Button and ScreenName_Input: 
         
-        
-#         if not Pause_Stream: 
-#             Pause_Stream = 0
-        
-    
-        # Forcing two variables into 0 as their default values, instead of NoneType
-#         if Submit_Button is None:
-#             Submit_Button = 0
         if Pause_Stream is None:
             Pause_Stream = 0
-            
-            
-#         if (Submit_Button == Pause_Stream) or (Last_Following_Info != ScreenName_Input):
-#             print('Submit_Button == pause_stream\n{}, {}'.format(Submit_Button, Pause_Stream))
-            
-#             return dash.no_update, 1, False, True
-            
+                       
         if Submit_Button > Pause_Stream:
 
             print('Stream starts...')
@@ -289,7 +222,7 @@ def open_close_stream(Submit_Button, Pause_Stream, ScreenName_Input, Length_of_s
         elif Pause_Stream > Submit_Button:
         
             print('Killing stream...')
-            
+
             os.kill(Stream_Process_Id, signal.SIGTERM)
             
             return 0, 1, False, True, True
@@ -297,13 +230,11 @@ def open_close_stream(Submit_Button, Pause_Stream, ScreenName_Input, Length_of_s
         
     else:
     ## Returning nothing
-        print('Returning nothing')
         return 0, 0, False, True, False
 
     
     
-
-## Either Input callback should be able to update table
+## Main callback creating table - either Submit or Table_Update triggers it
 @app.callback(
     [Output(component_id='tweet_table', component_property='data'),
      Output(component_id='Last_Following_Info', component_property='data'),
@@ -322,34 +253,27 @@ def open_close_stream(Submit_Button, Pause_Stream, ScreenName_Input, Length_of_s
 )
 def tweet_table(Table_Update_Component, Submit_Button, max_intervals, ScreenName_Input, number_tweets, Table_Exists_Or_Not_Check, Stream_Killed_or_Not, rows, columns, Last_Following_Info): # ScreenName_Input, number_tweets, Table_Exists_Or_Not_Check, rows, columns, Latest_Tweet_Info
 
-    print('tweet_table ran at least, Table_Exists_Or_Not_Check: {}'.format(Table_Exists_Or_Not_Check))
-
+    print('tweet_table ran at least')
     print('\n\nRESTART CHECK, \nTAable_Exists: {}\nStream_Killed: {}\nmax_inervals: {}\n'.format(Table_Exists_Or_Not_Check, Stream_Killed_or_Not, max_intervals))
-    
-    ## also missing  or (ScreenName_Input != Last_Following_Info)
-    ## Create table with old tweets first if table has not been created yet # (Table_Exists_Or_Not_Check == 1 and not isinstance(Table_Update_Component, int))
+
+    ## Create table with old tweets first if table has not been created yet, 
+    ## or recreate table if new tweet sources have been picked
     if (Table_Exists_Or_Not_Check == 0 and ScreenName_Input) or (Table_Exists_Or_Not_Check == 1 and Stream_Killed_or_Not == 1 and max_intervals == 0):
         
-        print('Table DOES NOT exist.')
-        
         tweets = old_tweets(ScreenName_Input, number_tweets)
-        
-        ## Crucial change below
-        return tweets.to_dict(orient='rows'), ScreenName_Input, 1#None#, tweet_author_indices
+
+        return tweets.to_dict(orient='rows'), ScreenName_Input, 1
 
     
-    ## Otherwise, update table with stream's output in csv
+    ## Otherwise, update table with stream's output in csv file
     elif Table_Exists_Or_Not_Check == 1:
-        
-            print('Table DOES exist.')
             
-            ## Check if csv exists even        
+            ## Check if csv exists        
             if not my_csv.is_file():
                                 
-                ## Crucial change below as well, hopefully this does not trigger Interval_Helper by sending same things
-                return rows, dash.no_update, 2#None
+                return rows, dash.no_update, 2
+  
 
-            
             if my_csv.is_file():
                 
                 f = open(csv_name, newline='')
@@ -358,12 +282,11 @@ def tweet_table(Table_Update_Component, Submit_Button, max_intervals, ScreenName
                 
                 ## If only header exists, csv is empty and should be ignored
                 if lines <2:
-                                            
-                    ## Crucial change below as well, hopefully this does not trigger Interval_Helper by sending same things
-                    return rows, dash.no_update, 2#None
+                                        
+                    return rows, dash.no_update, 2
             
 
-                ## Function to read 1) csv from bottom, and 2) live table from top, 
+                ## Function to concurrently read 1) csv from bottom and 2) live table from top, 
                 ## and perform what updates need to be done.
                 def read_csv_backwards(file_name, rows, lines):
                     newest_tweets = []
@@ -375,9 +298,6 @@ def tweet_table(Table_Update_Component, Submit_Button, max_intervals, ScreenName
                             line_formatted = {'Date': line_formatted[0], 'Author': line_formatted[1], 'Len': line_formatted[2], 
                                               'Favs': line_formatted[3], 'Retw': line_formatted[4], 'Text': line_formatted[5]}  
 
-
-                            print('\n\n\nCSV ROWS: \n{}\nTABLE ROWS: \n{}\n'.format(line_formatted, rows))
-                            
                             if (line_formatted == rows[i]) or (line_formatted['Date'] == 'Date'):
                                 print("MATCH!!!!")
                                 return rows, newest_tweets
@@ -388,18 +308,13 @@ def tweet_table(Table_Update_Component, Submit_Button, max_intervals, ScreenName
                                 j = j + 1
 
                                     
-                ## Needed to place above into function, to utilize return statement to break out of both loops.
+                ## New function needed to take advantage of return being able to break out of nested loops
                 rows, newest_tweets = read_csv_backwards(csv_name, rows, lines)
-                
-                
                                 
-                print('\n\nNEWEST_TWEETS: \n{}\n'.format(newest_tweets))
-                
-                
-                
+                print('\n\nNEWEST_TWEETS: \n{}\n'.format(newest_tweets))    
                 
                 ## After first new tweet comes in (after table has already loaded first time), 
-                ## check above function will always run, so check is necessary to see if it
+                ## read_csv_backwards will always run, so check is necessary to see if it
                 ## picked up any new tweets.
                 if not newest_tweets:
                     return rows, dash.no_update, 2
@@ -408,27 +323,20 @@ def tweet_table(Table_Update_Component, Submit_Button, max_intervals, ScreenName
 
     
     else:
-        print('No table_exists info yet.')
-        
-        ## Not sure if to implement crucial change below.
-        return [], dash.no_update, 2#None
+        print('Something went wrong with tweet_table.')
+        return [], dash.no_update, 2
     
 
-    
+## Callback for verifying table's existence    
 @app.callback(
     Output(component_id='Table_Exists_Or_Not_Check', component_property='data'),
    [Input(component_id='tweet_table', component_property='data')]
 )
 def table_data_check(tweet_data_exists_or_not):
     
-    print('\nDOES TWEET TABLE EXIST?\n')#: {}'.format(tweet_data_exists_or_not))
-    
     if tweet_data_exists_or_not:
-        print('Table existence CONFIRMED.')
         return 1
-        
     else:
-        print('Table existence NOT HERE.')
         return 0    
 
     
@@ -444,68 +352,64 @@ def table_data_check(tweet_data_exists_or_not):
 def enable_disable_interval(Table_Exists_Or_Not_Check, ScreenName_Input, Stream_Killed_or_Not, Last_Following_Info):
     if Table_Exists_Or_Not_Check:
         
-        if (Table_Exists_Or_Not_Check == 1) and (Stream_Killed_or_Not != 1): # and (ScreenName_Input == Last_Following_Info)
-            return -1#, 0
+        if (Table_Exists_Or_Not_Check == 1) and (Stream_Killed_or_Not != 1):
+            return -1
         
-        elif (Table_Exists_Or_Not_Check == 0) or (Stream_Killed_or_Not == 1): # or (ScreenName_Input != Last_Following_Info)
-            return 0#, 0
+        elif (Table_Exists_Or_Not_Check == 0) or (Stream_Killed_or_Not == 1):
+            return 0
     
     
 
-## Control over graph(s), runs on same interval component as Data Table visualizer callback
+## Control over graph, runs on same interval component as main tweet_table callback
 @app.callback(
    [Output(component_id='Sentiment_Graph', component_property='extendData'),
+    Output(component_id='Sentiment_Graph', component_property='figure'),
     Output(component_id='Graph_trace_indices', component_property='data')],
    [Input(component_id='Newest_Tweets', component_property='data')],
-#    [State(component_id='Interval_Helper', component_property='data'),
-#    [State(component_id='Table_Update_Component', component_property='n_intervals'),
-    [State(component_id='tweet_table', component_property='data'),
-     ## Semi-circular hack below
-     State(component_id='Graph_trace_indices', component_property='data')],
+   [State(component_id='tweet_table', component_property='data'),
+    State(component_id='kde_checklist', component_property='value'),
+    ## Semi-circular hack below
+    State(component_id='Graph_trace_indices', component_property='data')],
 )
-def sentiment_selected_tweets(Newest_Tweets, tweet_table, Graph_trace_indices):
+def sentiment_selected_tweets(Newest_Tweets, tweet_table, kde_checklist, Graph_trace_indices):
     
     def generate_trace_per_author(tweets_dict, Graph_trace_indices, create_or_append = 1):
-        
-#         traces = []
-#         for author in tweets_dict.keys():
-#             traces.append({'type':'histogram',
-#                            'x': tweets_dict[author],
-#                            'name': author
-#                           })
-
-        print('\n\ntweets_dict: \n{}\n'.format(tweets_dict))
-
 
         x_input = list(tweets_dict.values())
-        num_tweet_authors = len(x_input)
-    
-        print('\n\nX_INPUT: {}\n'.format(x_input))
+#         num_tweet_authors = len(x_input)
 
-        ## DEG + plotly way to do it, for built-in kde plots
+        ## If traces are being created, either at start of app, or when picking new twitter accounts
         if create_or_append == 1:
+            
+            ## Using automative plotly method to plot histograms + kde's at once
             fig = ff.create_distplot(x_input, [i for i in tweets_dict.keys()], bin_size=.2, show_rug=False)
-        elif create_or_append == 2:
-            fig = {'data': [{'x': i} for i in x_input]}
-            print('\n\nFIGURE: \n{}\n'.format(fig))
-
             
-        traces = []
-        for i in fig['data']:
-            traces.append(i)
+            traces = []
+            for i in fig['data']:
+                traces.append(i)
             
-        ## Creating traces
-        if  create_or_append == 1:
-                
+            ## To create a dict carrying the index of each trace, 
+            ## so future tweets know which trace to go into
             trace_indices = {}
             for i, j in enumerate(tweets_dict.keys()):
                 trace_indices[j] = i
-                
-            print('\n\n\n\nTRACE_INDICES: \n{}\n\n'.format(trace_indices))
-            return traces, trace_indices
-                
-        ## Appending to already existing traces with new tweets      
+
+            ## Slight visual editing
+            for i in traces:
+                if isinstance(i, plotly.graph_objs._histogram.Histogram):
+                    i['xbins'] = {'end': 1, 'size': 0.2, 'start': -1.0}
+
+            figure = {'data': traces}
+
+            return figure, trace_indices
+        
+        ## Or appending to existing traces
         elif create_or_append == 2:
+            fig = {'data': [{'x': i} for i in x_input]}
+          
+            traces = []
+            for i in fig['data']:
+                traces.append(i)
             
             traces = [traces]
 
@@ -514,64 +418,41 @@ def sentiment_selected_tweets(Newest_Tweets, tweet_table, Graph_trace_indices):
                 trace_indices.extend([Graph_trace_indices[i]])
                 
             traces.append(trace_indices)
-            
-            print('\n\nTRACES_EXTEND: \n{}\n'.format(traces))
-            
+
             return traces
     
-    
-    
-    
-    
+    ## New stream has just started, and new graph needs to be made
     if Newest_Tweets == 1:
         
         tweets_sentiment = tweet_sentiment(tweet_table)        
-        
-        print('\n\nFIRST RUN 1st!!\n{}\n'.format(tweets_sentiment))
 
-        # Tweets' sentiments grouped by Author and then fed in
+        # Tweets' sentiments grouped by Author and then fed in to make traces
         traces, trace_indices = generate_trace_per_author(tweets_sentiment, [], 1)
-                    
-        print('\n\nFIRST RUN 2nd!!\n{}\n'.format(traces))
-        
-        
-        
-        print('\n\n\nTHIS IS TRACE: \n{}\n'.format(traces))
-        
-        return traces, trace_indices
-        
 
-    elif Newest_Tweets == 2:
+        return dash.no_update, traces, trace_indices
         
-        ## Returning same table, if no new tweets have come in since table load
+    ## Table exists, and no new tweets, so no update
+    elif Newest_Tweets == 2:
+
         print('\n\ndash.no_update should be working\n\n')
         
-        return dash.no_update, dash.no_update
-    
-    
-        
+        return dash.no_update, dash.no_update, dash.no_update
 
+    ## New tweet data has come in
     elif (Newest_Tweets != 1) or (Newest_Tweets != 2):
 
-
-        print('\n\nSECOND 1st RUN!!\n{}\n'.format(Newest_Tweets))
-
         newest_tweets_sentiment = tweet_sentiment(Newest_Tweets) 
-
-        print('\n\nSECOND 2nd RUN!!\n{}\n'.format(newest_tweets_sentiment))
-        
         traces = generate_trace_per_author(newest_tweets_sentiment, Graph_trace_indices, 2)
 
 
-        return traces, dash.no_update
+        return traces, dash.no_update, dash.no_update
 
         
     else:
-        return {"data": []}, dash.no_update
+        return {"data": []}, {"data": []}, dash.no_update
 
 
-    
-    
+        
 ## For downloading table data 
 @app.callback(
     Output('table_download_link', 'href'),
@@ -581,8 +462,7 @@ def sentiment_selected_tweets(Newest_Tweets, tweet_table, Graph_trace_indices):
 def update_download_link(table_download_button, data):
     
     if table_download_button:
-        
-    #     dff = df
+
         dff = pd.DataFrame(data)
 
         csv_string = dff.to_csv(index=False, encoding='utf-8')
@@ -593,7 +473,6 @@ def update_download_link(table_download_button, data):
     
     
     
-
 
 if __name__ == '__main__':
     app.run_server(debug=True)
