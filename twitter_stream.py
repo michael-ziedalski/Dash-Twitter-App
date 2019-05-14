@@ -76,7 +76,7 @@ def twitter_stream_listener(file_name=args.file_name,
                         writer = csv.writer(f)
                         writer.writerow([
                             status.created_at, status.author.screen_name,
-                            len(status.text), status.favorite_count, 					      status.retweet_count, status.text 
+                            len(status.text), status.favorite_count, status.retweet_count, status.text 
                         ])
                 
                 
