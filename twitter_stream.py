@@ -45,8 +45,6 @@ def twitter_stream_listener(file_name=args.file_name,
     
     
     ## Automatic filename generation if file_name missing, based on sub_name prefix and current date
-#     if file_name == None:
-#         file_name = sub_name+datetime.datetime.now().strftime("%m-%d-%Y_%H-%M-%S")+'.csv'
     if file_name == None:
         file_name = sub_name+'.csv'
 
@@ -78,7 +76,7 @@ def twitter_stream_listener(file_name=args.file_name,
                         writer = csv.writer(f)
                         writer.writerow([
                             status.created_at, status.author.screen_name,
-                            len(status.text), status.favorite_count, 					      status.retweet_count, status.text 
+                            len(status.text), status.favorite_count, status.retweet_count, status.text 
                         ])
                 
                 
@@ -119,7 +117,6 @@ def twitter_stream_listener(file_name=args.file_name,
     )
     f.close()
     
-    
-    
+      
 ## Running stream
 twitter_stream_listener()

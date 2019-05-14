@@ -10,6 +10,7 @@ import datetime
 import collections
 import itertools
 
+
 ## Getting id's from twitter screen_names
 def id_extractor(screenname):
         
@@ -31,6 +32,7 @@ def id_extractor(screenname):
             ids[names] = str(api.get_user(screen_name=names).id)
             
     return ids
+
 
 
 ## Getting old tweets
@@ -59,33 +61,8 @@ def old_tweets(screenname, tweet_count = 10):
         archive = pd.concat(objs=[archive, 
                                   pd.DataFrame(info, columns=['Date', 'Author', 'Len', 'Favs', 'Retw', 'Text'])])
         
-#     archive.set_index('Date', inplace=True) 
-#     archive.sort_index(inplace=True)
     archive.sort_values(by='Date')
-    archive.reset_index(drop=True, inplace=True)    
-    
+    archive.reset_index(drop=True, inplace=True)
     
     return archive
-
-
-# def consume(iterator, n):
-#     "Advance the iterator n-steps ahead. If n is none, consume entirely."
-#     # Use functions that consume iterators at C speed.
-#     if n is None:
-#         # feed the entire iterator into a zero-length deque
-#         collections.deque(iterator, maxlen=0)
-#     else:
-#         # advance to the empty slice starting at position n
-#         next(itertools.islice(iterator, n, n), None)
-        
-        
-
-# def Tweet_Author_Placement(tweets, ScreenName_Input):
-    
-#     ids_dict = {}
-    
-#     for i in ScreenName_Input:
-#         ids_dict[ScreenName_Input] = np.where(tweets['Author'] == ScreenName_Input)
-        
-#     return ids_dict
     
