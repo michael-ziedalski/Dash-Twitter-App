@@ -73,16 +73,10 @@ app.layout = html.Div(children=[
                        html.Button(id='Pause_Stream', children='Pause stream',
                                    style={'grid-row':'2 / 3', 'grid-column':'5 / 6'}),
         
-                       html.A(html.Button(children='Save to CSV', id='table_download_button',
-                                          style={'grid-row':'2 / 3', 'grid-column':'6 / 7'}),
-                              id='table_download_link',
-                              download="raw_tweet_data.csv",
-                              href="",
-                              target="_blank"),
 
     ],
               style={'display':'grid', 'grid-template-rows':'25px 25px 25px 25px', 
-                     'grid-auto-columns': '100px 100px 100px 100px 140px 140px '} # 100px 150px
+                     'grid-auto-columns': '100px 100px 100px 100px 140px'} # 100px 150px
             ),
     
     
@@ -144,26 +138,38 @@ app.layout = html.Div(children=[
                          style={'margin-top':'-137px'}),
                 
 
-                  dcc.Loading(id='graph_loading_symbol', type='circle', children=[
+                  ## Currently, dcc.Loading is a bit immature, but will be kept here till it can be used
+#                   dcc.Loading(id='graph_loading_symbol', type='circle', children=[
                       deg.ExtendableGraph(id='Sentiment_Graph', 
                                           figure={'layout': {'title': '% of tweets positive or negative',
                                                              'barmode':'overlay'},
                                                   'data': []
                                       }
                               )
-                  ])
+#                   ])
 
-                
-                
-                
-                
-                
+                             
                 
             ])
     ],
 
               style={'display':'grid', 'grid-template-columns': '50% 50%', 'column-gap':'20px',
                      'margin-top':'-25px'}),
+    
+    
+    ## Download button for table.
+    html.Div(id='button_to_hide', children=[
+        
+             html.A(html.Button(children='Save to CSV', id='table_download_button'),
+                    id='table_download_link', download="raw_tweet_data.csv", href="", target="_blank")
+    ],    
+             ## Putting html.A in Div purely to control if button is visible through 'display'
+             style={'display': 'block'}
+             
+            ),
+             
+    
+    
     
     
     ## Saving most recent tweet from stream, as well as
@@ -235,7 +241,8 @@ def open_close_stream(Submit_Button, Pause_Stream, ScreenName_Input, Length_of_s
 @app.callback(
     [Output(component_id='tweet_table', component_property='data'),
      Output(component_id='Last_Following_Info', component_property='data'),
-     Output(component_id='Newest_Tweets', component_property='data')],
+     Output(component_id='Newest_Tweets', component_property='data'),
+     Output(component_id='button_to_hide', component_property='style')],
     [Input(component_id='Table_Update_Component', component_property='n_intervals'),
      Input(component_id='Submit_Button', component_property='n_clicks_timestamp')],
     [State(component_id='Table_Update_Component', component_property='max_intervals'),
@@ -259,7 +266,7 @@ def tweet_table(Table_Update_Component, Submit_Button, max_intervals, ScreenName
         
         tweets = old_tweets(ScreenName_Input, number_tweets)
 
-        return tweets.to_dict(orient='rows'), ScreenName_Input, 1
+        return tweets.to_dict(orient='rows'), ScreenName_Input, 1, {'display': 'inline-block'}
 
     
     ## Otherwise, update table with stream's output in csv file
@@ -268,7 +275,7 @@ def tweet_table(Table_Update_Component, Submit_Button, max_intervals, ScreenName
             ## Check if csv exists        
             if not my_csv.is_file():
                                 
-                return rows, dash.no_update, 2
+                return rows, dash.no_update, 2, dash.no_update
   
 
             if my_csv.is_file():
@@ -280,7 +287,7 @@ def tweet_table(Table_Update_Component, Submit_Button, max_intervals, ScreenName
                 ## If only header exists, csv is empty and should be ignored
                 if lines <2:
                                         
-                    return rows, dash.no_update, 2
+                    return rows, dash.no_update, 2, dash.no_update
                 
 
                 ## Function to concurrently read 1) csv from bottom and 2) live table from top, 
@@ -293,14 +300,14 @@ def tweet_table(Table_Update_Component, Submit_Button, max_intervals, ScreenName
                 ## read_csv_backwards will always run, so check is necessary to see if it
                 ## picked up any new tweets.
                 if not newest_tweets:
-                    return rows, dash.no_update, 2
+                    return rows, dash.no_update, 2, dash.no_update
                 elif newest_tweets:
-                    return rows, dash.no_update, newest_tweets
+                    return rows, dash.no_update, newest_tweets, dash.no_update
 
     
     else:
         print('Something went wrong with tweet_table.')
-        return [], dash.no_update, 2
+        return [], dash.no_update, 2, {'display': 'block'}
     
 
 ## Callback for verifying table's existence    
