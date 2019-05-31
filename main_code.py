@@ -116,27 +116,6 @@ app.layout = html.Div(children=[
 
 
             html.Div(children=[
-            
-                html.Div(children=[
-                    
-                    html.H4(children = 'Analysis',
-                        style = {'font-size': '24px'}),
-                
-                    dcc.Checklist(id = 'kde_checklist',
-                                  options =[{'label': "KDE's", 'value': 1}],
-                                  values = [1],
-                                  style = {'margin-top':'-20px'}),
-                    
-                    dcc.Dropdown(id = 'dropdown',
-                                 options = [{'label': 'Technique 1', 'value': 1},
-                                            {'label': 'Technique 2', 'value': 2},
-                                            {'label': 'Technique 3', 'value': 3}],
-                                 value = 1,
-                                 style={'margin-top': '13px', 'width': '200px'})
-                    
-                ],
-                         style={'margin-top':'-137px'}),
-                
 
                   ## Currently, dcc.Loading is a bit immature, but will be kept here till it can be used
 #                   dcc.Loading(id='graph_loading_symbol', type='circle', children=[
@@ -144,29 +123,27 @@ app.layout = html.Div(children=[
                                           figure={'layout': {'title': '% of tweets positive or negative',
                                                              'barmode':'overlay'},
                                                   'data': []
-                                      }
-                              )
-#                   ])
-
-                             
-                
-            ])
+                                                 }
+                                         )
+#                   ]) 
+                           
+            ]) # <--- THIS HERE
     ],
 
               style={'display':'grid', 'grid-template-columns': '50% 50%', 'column-gap':'20px',
                      'margin-top':'-25px'}),
     
-    
-    ## Download button for table.
-    html.Div(id='button_to_hide', children=[
+      ## Hiding download button until css error changing its position is handled
+#     ## Download button for table.
+#     html.Div(id='button_to_hide', children=[
         
-             html.A(html.Button(children='Save to CSV', id='table_download_button'),
-                    id='table_download_link', download="raw_tweet_data.csv", href="", target="_blank")
-    ],    
-             ## Putting html.A in Div purely to control if button is visible through 'display'
-             style={'display': 'block'}
+#              html.A(html.Button(children='Save to CSV', id='table_download_button'),
+#                     id='table_download_link', download="raw_tweet_data.csv", href="", target="_blank")
+#     ],    
+#              ## Putting html.A in Div purely to control if button is visible through 'display'
+#              style={'display': 'block'}
              
-            ),
+#             ),
              
     
     
@@ -350,11 +327,11 @@ def enable_disable_interval(Table_Exists_Or_Not_Check, ScreenName_Input, Stream_
     Output(component_id='Graph_trace_indices', component_property='data')],
    [Input(component_id='Newest_Tweets', component_property='data')],
    [State(component_id='tweet_table', component_property='data'),
-    State(component_id='kde_checklist', component_property='value'),
+#     State(component_id='kde_checklist', component_property='value'),
     ## Semi-circular hack below
     State(component_id='Graph_trace_indices', component_property='data')],
-)
-def sentiment_grapher(Newest_Tweets, tweet_table, kde_checklist, Graph_trace_indices):
+) # kde_checklist
+def sentiment_grapher(Newest_Tweets, tweet_table, Graph_trace_indices):
     
     ## New stream has just started, and new graph needs to be made
     if Newest_Tweets == 1:
