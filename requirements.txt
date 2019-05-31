@@ -1,0 +1,12 @@
+dash==0.42.0
+dash_core_components==0.47.0
+dash_extendable_graph==0.2.4
+dash_html_components==0.16.0
+dash_table==3.6.0
+file_read_backwards==2.0.0
+Flask==1.0.2
+numpy==1.16.0
+pandas==0.23.4
+plotly==3.7.1
+textblob==0.15.2
+tweepy==3.7.0
