@@ -2,7 +2,7 @@
 
 ## Overview
 
-This is a Twitter app built in Python with the Dash framework (https://plot.ly/products/dash/), meant to visualize user's tweets and display their sentiment scores. It is mostly an exercise in clean data visualization and rigorous programming.
+This is a Twitter app built in Python using the Dash framework, https://plot.ly/products/dash/, it is meant to simply visualize users' tweets and display the distributions of all their sentiment scores. It is mostly an exercise in clean data visualization and building an app.
 
 ## Usage and installation
 
