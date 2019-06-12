@@ -2,7 +2,7 @@
 
 ## Overview
 
-A Twitter app built in Python using the Dash framework - https://plot.ly/products/dash - which is meant to visualize users' tweets and display the distributions of their sentiment scores. Whenever a record of any user's tweets is requested, a streaming API is also utilized to open a stream and listen for any new tweets, which will be displayed as they come in.
+A Twitter app built in Python using the Dash framework - https://plot.ly/products/dash - which is meant to visualize users' tweets and display the distributions of their sentiment scores. Whenever a record of any user's tweets is requested, a streaming API is also utilized to open a stream and listen for any new tweets for a duration, which will be displayed as they come in.
 
 The Dash-Twitter-App is mostly a humble exercise in clean and effective data visualization.
 
@@ -18,6 +18,6 @@ If nothing happens, check the console for any errors (which will report such thi
 
 ## Current limitations
 
-The free Twitter API in use has generally common-sense network restrictions, so if too many requests are made in too short a time, Twitter may start sending 404's in retaliation for the unsolicited bombardment. In addition, too many twitter handles or tweets cannot be requested all at once.
+The free Twitter API in use has common-sense network restrictions, so if too many requests are made in too short a time, Twitter may start sending `404` messages in retaliation for the unsolicited bombardment. Additionally, too many twitter handles or tweets cannot be requested all at once.
 
 Hope you enjoy!
