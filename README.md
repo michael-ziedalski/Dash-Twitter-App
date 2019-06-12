@@ -18,6 +18,6 @@ If nothing happens, check the console for any errors (which will report such thi
 
 ## Current limitations
 
-The free Twitter API in use has common-sense network restrictions, so if too many requests are made in too short a time, Twitter may start sending `404` messages in retaliation for the unsolicited bombardment. Additionally, too many twitter handles or tweets cannot be requested all at once.
+The free Twitter API in use has common-sense network restrictions, so if too many requests are made in too short a time, Twitter may start sending `404` errors in retaliation for the unsolicited bombardment. Additionally, too many twitter handles or tweets cannot be requested all at once.
 
 Hope you enjoy!
