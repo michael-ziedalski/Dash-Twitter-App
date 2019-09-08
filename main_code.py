@@ -33,7 +33,8 @@ from table_and_graph_functions import read_csv_backwards, generate_trace_per_aut
 ## Pointing subprocess to active directory
 os.chdir(sys.path[0])
 
-app = dash.Dash(dev_tools_hot_reload=True)
+app = dash.Dash(__name__)
+# app = dash.Dash(dev_tools_hot_reload=True)
 app.scripts.config.serve_locally = True
 app.config['suppress_callback_exceptions'] = True
 
@@ -91,7 +92,7 @@ app.layout = html.Div(children=[
                                                 {'name': 'Text', 'id': 'Text'}],
                                   
                                    ## Column titles always visible
-                                   n_fixed_rows = 1,
+                                   # n_fixed_rows = 1,
 
                                    style_cell = {'whiteSpace':'normal'},
                                   
@@ -235,7 +236,7 @@ def open_close_stream(Submit_Button, Pause_Stream, ScreenName_Input, Length_of_s
 def tweet_table(Table_Update_Component, Submit_Button, max_intervals, ScreenName_Input, number_tweets, Table_Exists_Or_Not_Check, Stream_Killed_or_Not, rows, columns, Last_Following_Info): # ScreenName_Input, number_tweets, Table_Exists_Or_Not_Check, rows, columns, Latest_Tweet_Info
 
     print('tweet_table ran at least')
-    print('\n\nRESTART CHECK, \nTAable_Exists: {}\nStream_Killed: {}\nmax_inervals: {}\n'.format(Table_Exists_Or_Not_Check, Stream_Killed_or_Not, max_intervals))
+    print('\n\nRESTART CHECK, \nTAable_Exists: {}\nStream_Killed: {}\nmax_intervals: {}\n'.format(Table_Exists_Or_Not_Check, Stream_Killed_or_Not, max_intervals))
 
     ## Create table with old tweets first if table has not been created yet, 
     ## or recreate table if new tweet sources have been picked
@@ -352,7 +353,7 @@ def sentiment_grapher(Newest_Tweets, tweet_table, Graph_trace_indices):
         return dash.no_update, dash.no_update, dash.no_update
 
     ## New tweet data has come in
-    elif (Newest_Tweets != 1) or (Newest_Tweets != 2):
+    elif (Newest_Tweets is not None and ((Newest_Tweets != 1) or (Newest_Tweets != 2))):
 
         newest_tweets_sentiment = tweet_sentiment(Newest_Tweets) 
         traces = generate_trace_per_author(newest_tweets_sentiment, Graph_trace_indices, 2)
