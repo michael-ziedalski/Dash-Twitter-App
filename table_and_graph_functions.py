@@ -49,7 +49,7 @@ def generate_trace_per_author(tweets_dict, Graph_trace_indices, create_or_append
 
         ## Slight visual editing
         for i in traces:
-            if isinstance(i, plotly.graph_objs._histogram.Histogram):
+            if isinstance(i, plotly.graph_objs.Histogram):
                 i['xbins'] = {'end': 1, 'size': 0.2, 'start': -1.0}
                 i['histnorm'] = 'probability'
 
