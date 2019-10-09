@@ -33,34 +33,69 @@ def id_extractor(screenname):
             
     return ids
 
+def keyword_parser(keywords_string):
+
+    if ',' in keywords_string:
+      keywords_string = keywords_string.replace(" ","").split(',')
+
+    return keywords_string
 
 
 ## Getting old tweets
-def old_tweets(screenname, tweet_count = 10):
+def old_tweets(screenname=None, keywords=None, tweet_count = 10):
 
-    print(type(screenname), screenname)
-
-    ids = id_extractor(screenname)
-    
     archive = pd.DataFrame([])
-    
-    for name in ids:
-    
-        # Calling the user_timeline function with our parameters
-        tweets = api.user_timeline(user_id=ids[name], count=tweet_count)
+
+    if keywords and not screenname:
+
+        # search_words = "wildfires"
+        # date_since = "2018-11-16"
+
+        # new_search = search_words + " -filter:retweets"
+        search_term = keywords + " -filter:retweets"
+
+        tweets = tw.Cursor(api.search,
+                           q = search_term, tweet_mode='extended',
+                           # since = date_since
+                           lang = "en").items(tweet_count)
 
         ## First row has date format being changed to more readable version
-        info = np.array([[tweet.created_at.strftime('%Y-%m-%d %H:%M'), 
-                          tweet.author.screen_name,
-                          len(tweet.text),
-                          tweet.favorite_count,
-                          tweet.retweet_count,
-                          tweet.text] 
-                          for tweet in tweets])
+        tweets_organized = np.array([[tweet.created_at.strftime('%Y-%m-%d %H:%M'), 
+                                     tweet.author.screen_name,
+                                     len(tweet.full_text),
+                                     tweet.favorite_count,
+                                     tweet.retweet_count,
+                                     tweet.full_text] 
+                                     for tweet in tweets])
 
-        archive = pd.concat(objs=[archive, 
-                                  pd.DataFrame(info, columns=['Date', 'Author', 'Len', 'Favs', 'Retw', 'Text'])])
+        archive = pd.concat(objs=[archive,
+          pd.DataFrame(tweets_organized, columns=['Date', 'Author', 'Len', 'Favs', 'Retw', 'Text'])])
+
+
+    if screenname and not keywords:
+
+        print(type(screenname), screenname)
+
+        ids = id_extractor(screenname)
+
+        for name in ids:
         
+            # Calling the user_timeline function with our parameters
+            tweets = api.user_timeline(user_id=ids[name], count=tweet_count)
+
+            ## First row has date format being changed to more readable version
+            tweets_organized = np.array([[tweet.created_at.strftime('%Y-%m-%d %H:%M'), 
+                                         tweet.author.screen_name,
+                                         len(tweet.text),
+                                         tweet.favorite_count,
+                                         tweet.retweet_count,
+                                         tweet.text] 
+                                         for tweet in tweets])
+
+
+            archive = pd.concat(objs=[archive,
+                      pd.DataFrame(tweets_organized, columns=['Date', 'Author', 'Len', 'Favs', 'Retw', 'Text'])])
+          
     archive.sort_values(by='Date')
     archive.reset_index(drop=True, inplace=True)
     
