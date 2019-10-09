@@ -56,28 +56,33 @@ app.layout = html.Div(children=[
                                   style={'grid-row':'1 / 2', 'grid-column':'1 / 2'}),
                        dcc.Input('ScreenName_Input', type='text',
                                   style={'grid-row':'2 / 3', 'grid-column':'1 / 2'}),
+
+                       html.Label('Keywords',
+                                 style={'grid-row':'1 / 2', 'grid-column':'2 / 3'}),
+                       dcc.Input('Keywords_Input', type='text',
+                                 style={'grid-row':'2 / 3', 'grid-column':'2 / 3'}),
     
                        html.Label('# of tweets',
-                                  style={'grid-row':'1 / 2', 'grid-column':'2 / 3'}),
-                       dcc.Input(id='Num_of_Tweets_Input', value=10, type='number',
-                                  style={'grid-row':'2 / 3', 'grid-column':'2 / 3'}),
-        
-                       html.Label('Time (min)',
                                   style={'grid-row':'1 / 2', 'grid-column':'3 / 4'}),
-                       dcc.Input(id='Length_of_stream_Input', value=10, type='number',
+                       dcc.Input(id='Num_of_Tweets_Input', value=10, type='number',
                                   style={'grid-row':'2 / 3', 'grid-column':'3 / 4'}),
         
+                       html.Label('Time (min)',
+                                  style={'grid-row':'1 / 2', 'grid-column':'4 / 5'}),
+                       dcc.Input(id='Length_of_stream_Input', value=10, type='number',
+                                  style={'grid-row':'2 / 3', 'grid-column':'4 / 5'}),
+        
                        html.Button(id='Submit_Button', children='Submit',
-                                   style={'grid-row':'2 / 3', 'grid-column':'4 / 5'}),
+                                   style={'grid-row':'2 / 3', 'grid-column':'5 / 6'}),
         
         
                        html.Button(id='Pause_Stream', children='Pause stream',
-                                   style={'grid-row':'2 / 3', 'grid-column':'5 / 6'}),
+                                   style={'grid-row':'2 / 3', 'grid-column':'6 / 7'}),
         
 
-    ],
-              style={'display':'grid', 'grid-template-rows':'25px 25px 25px 25px', 
-                     'grid-auto-columns': '100px 100px 100px 100px 140px'} # 100px 150px
+    ],        # For some reason, even though there are 2 rows in this area, the code needs 4 rows to display correctly 
+              style={'display':'grid', 'grid-template-rows':'25px 25px 25px 25px',
+                     'grid-auto-columns': '100px 100px 100px 100px 100px 140px'} # 100px 150px
             ),
     
     
@@ -154,12 +159,13 @@ app.layout = html.Div(children=[
     ## name of most recent csv created in quick cache
     dcc.Store(id='Table_Exists_Or_Not_Check'),
     dcc.Store(id='Newest_Tweets'),
+    dcc.Store(id='Only_Keywords_Search'),
     dcc.Store(id='Last_Following_Info'),
     dcc.Store(id='Tweet_Author_Indices'),
     dcc.Store(id='Stream_Process_Id'),
     dcc.Store(id='Stream_Killed_or_Not'),
     dcc.Store(id='Graph_trace_indices'),
-    dcc.Interval(id='Table_Update_Component', interval=3*1000, n_intervals=0,
+    dcc.Interval(id='Table_Update_Component', interval=10*1000, n_intervals=0,
                  max_intervals=0), ## Interval component is disabled as default, until it is enabled
     
 ])
@@ -174,31 +180,47 @@ app.layout = html.Div(children=[
      Output(component_id='Stream_Killed_or_Not', component_property='data'),
      Output(component_id='Submit_Button', component_property='disabled'),
      Output(component_id='Pause_Stream', component_property='disabled'),
-     Output(component_id='ScreenName_input', component_property='disabled')],
+     Output(component_id='ScreenName_input', component_property='disabled'),
+     Output(component_id='Only_Keywords_Search', component_property='data')],
     [Input(component_id='Submit_Button', component_property='n_clicks_timestamp'),
      Input(component_id='Pause_Stream', component_property='n_clicks_timestamp')],
     [State(component_id='ScreenName_Input', component_property='value'),
+     State(component_id='Keywords_Input', component_property='value'),
      State(component_id='Length_of_stream_Input', component_property='value'),
      ## Circular hack below
      State(component_id='Stream_Process_Id', component_property='data'),
      State(component_id='Stream_Killed_or_Not', component_property='data')]
 )
-def open_close_stream(Submit_Button, Pause_Stream, ScreenName_Input, Length_of_stream_Input, Stream_Process_Id, Stream_Killed_or_Not):
+def open_close_stream(Submit_Button, Pause_Stream, ScreenName_Input, Keywords_Input, Length_of_stream_Input, Stream_Process_Id, Stream_Killed_or_Not):
     
     ## Additional check to make sure nothing starts until Submit is hit, 
     ## and then starting stream in its own process
-    if Submit_Button and ScreenName_Input: 
+    if (Submit_Button and ScreenName_Input) or (Submit_Button and Keywords_Input): 
         
         if Pause_Stream is None:
             Pause_Stream = 0
-                       
+
+        ## Keywords query sent in by default empty
+        Keywords_list = ""
+        if Keywords_Input:
+            Keywords_list = Keywords_Input
+
+        ## Putting in check whether only keywords are queried, for efficiency
+        only_keywords_search = 0
+        if Keywords_list and not ScreenName_Input:
+            only_keywords_search = 1
+
+
         if Submit_Button > Pause_Stream:
 
             print('Stream starts...')
 
-            stream = subprocess.Popen(['python3', 'twitter_stream.py'] + [str(ScreenName_Input), str(Length_of_stream_Input)])
+            # print('\n\nThis is what subprocess gets: {}\n\n'.format(['python3', 'twitter_stream.py'] + [str(ScreenName_Input), str(Length_of_stream_Input), str(Keywords_list)]))
 
-            return stream.pid, 0, True, False, True
+            stream = subprocess.Popen(['python3', 'twitter_stream.py'] + [str(ScreenName_Input), str(Length_of_stream_Input), str(Keywords_list)])
+            # stream = subprocess.Popen(['python3', 'twitter_stream.py'] + [str(ScreenName_Input), str(Length_of_stream_Input)])
+
+            return stream.pid, 0, True, False, True, only_keywords_search
 
         elif Pause_Stream > Submit_Button:
         
@@ -206,12 +228,12 @@ def open_close_stream(Submit_Button, Pause_Stream, ScreenName_Input, Length_of_s
 
             os.kill(Stream_Process_Id, signal.SIGTERM)
             
-            return 0, 1, False, True, True
+            return 0, 1, False, True, True, dash.no_update
             
         
     else:
     ## Returning nothing
-        return 0, 0, False, True, False
+        return 0, 0, False, True, False, dash.no_update
 
     
     
@@ -225,6 +247,7 @@ def open_close_stream(Submit_Button, Pause_Stream, ScreenName_Input, Length_of_s
      Input(component_id='Submit_Button', component_property='n_clicks_timestamp')],
     [State(component_id='Table_Update_Component', component_property='max_intervals'),
      State(component_id='ScreenName_Input', component_property='value'),
+     State(component_id='Keywords_Input', component_property='value'),
      State(component_id='Num_of_Tweets_Input', component_property='value'),
      State(component_id='Table_Exists_Or_Not_Check', component_property='data'),#]#, , table_rows, table_columns
      State(component_id='Stream_Killed_or_Not', component_property='data'),
@@ -233,16 +256,19 @@ def open_close_stream(Submit_Button, Pause_Stream, ScreenName_Input, Length_of_s
      State(component_id='tweet_table', component_property='columns'),
      State(component_id='Last_Following_Info', component_property='data')]
 )
-def tweet_table(Table_Update_Component, Submit_Button, max_intervals, ScreenName_Input, number_tweets, Table_Exists_Or_Not_Check, Stream_Killed_or_Not, rows, columns, Last_Following_Info): # ScreenName_Input, number_tweets, Table_Exists_Or_Not_Check, rows, columns, Latest_Tweet_Info
+def tweet_table(Table_Update_Component, Submit_Button, max_intervals, ScreenName_Input, Keywords_Input, number_tweets, Table_Exists_Or_Not_Check, Stream_Killed_or_Not, rows, columns, Last_Following_Info): # ScreenName_Input, number_tweets, Table_Exists_Or_Not_Check, rows, columns, Latest_Tweet_Info
 
     print('tweet_table ran at least')
     print('\n\nRESTART CHECK, \nTAable_Exists: {}\nStream_Killed: {}\nmax_intervals: {}\n'.format(Table_Exists_Or_Not_Check, Stream_Killed_or_Not, max_intervals))
 
     ## Create table with old tweets first if table has not been created yet, 
     ## or recreate table if new tweet sources have been picked
-    if (Table_Exists_Or_Not_Check == 0 and ScreenName_Input) or (Table_Exists_Or_Not_Check == 1 and Stream_Killed_or_Not == 1 and max_intervals == 0):
+    if (Table_Exists_Or_Not_Check == 0 and (ScreenName_Input or Keywords_Input)) or (Table_Exists_Or_Not_Check == 1 and Stream_Killed_or_Not == 1 and max_intervals == 0):
         
-        tweets = old_tweets(ScreenName_Input, number_tweets)
+        if ScreenName_Input and not Keywords_Input:
+            tweets = old_tweets(screenname=ScreenName_Input, tweet_count=number_tweets)
+        elif Keywords_Input and not ScreenName_Input:
+            tweets = old_tweets(keywords=Keywords_Input, tweet_count=number_tweets)
 
         return tweets.to_dict(orient='rows'), ScreenName_Input, 1, {'display': 'inline-block'}
 
@@ -327,20 +353,32 @@ def enable_disable_interval(Table_Exists_Or_Not_Check, ScreenName_Input, Stream_
     Output(component_id='Sentiment_Graph', component_property='figure'),
     Output(component_id='Graph_trace_indices', component_property='data')],
    [Input(component_id='Newest_Tweets', component_property='data')],
-   [State(component_id='tweet_table', component_property='data'),
+
+
+
+   [State(component_id='Only_Keywords_Search', component_property='data'),
+
+
+
+    State(component_id='tweet_table', component_property='data'),
 #     State(component_id='kde_checklist', component_property='value'),
     ## Semi-circular hack below
     State(component_id='Graph_trace_indices', component_property='data')],
 ) # kde_checklist
-def sentiment_grapher(Newest_Tweets, tweet_table, Graph_trace_indices):
+def sentiment_grapher(Newest_Tweets, Only_Keywords_Search, tweet_table, Graph_trace_indices):
     
     ## New stream has just started, and new graph needs to be made
     if Newest_Tweets == 1:
-        
-        tweets_sentiment = tweet_sentiment(tweet_table)        
+
+        tweets_sentiment = tweet_sentiment(tweet_table, Only_Keywords_Search)        
 
         ## Tweets' sentiments grouped by Author and then fed in to make traces;
         ## creating traces that Dash/plotly can make graphs out of
+
+
+        # print("\n\nSTREAM START: tweets_sentiment\n{}\n\n".format(tweets_sentiment))
+
+
         traces, trace_indices = generate_trace_per_author(tweets_sentiment, [], 1)
 
         return dash.no_update, traces, trace_indices
@@ -355,8 +393,8 @@ def sentiment_grapher(Newest_Tweets, tweet_table, Graph_trace_indices):
     ## New tweet data has come in
     elif (Newest_Tweets is not None and ((Newest_Tweets != 1) or (Newest_Tweets != 2))):
 
-        newest_tweets_sentiment = tweet_sentiment(Newest_Tweets) 
-        traces = generate_trace_per_author(newest_tweets_sentiment, Graph_trace_indices, 2)
+        newest_tweets_sentiment = tweet_sentiment(Newest_Tweets, Only_Keywords_Search) 
+        traces = generate_trace_per_author(newest_tweets_sentiment, Graph_trace_indices, 2, Only_Keywords_Search)
 
 
         return traces, dash.no_update, dash.no_update
